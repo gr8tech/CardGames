@@ -1,6 +1,7 @@
-import card
 import sys
 import random
+
+from . import card
 
 def create_deck():
     '''

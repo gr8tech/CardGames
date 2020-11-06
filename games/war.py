@@ -1,5 +1,5 @@
 import pygame
-import game
+from . import game
 import time
 import copy
 
