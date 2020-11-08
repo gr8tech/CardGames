@@ -27,8 +27,11 @@ TABLE_MAT_POS = (51, 168)
 LEFT_PLAYER_CARD_POS =  (270, 234.5)
 RIGHT_PLAYER_CARD_POS = (421, 234.5)
 LEFT_PLAYER_DECK_POS = (42, 31)
+LEFT_WAR_HAND = (121, 234.5)
+RIGHT_WAR_HAND = (570, 234.5)
 RIGHT_PLAYER_DECK_POS = (648, 451)
 PLAY_BUTTON_POS = (540, 542, 80, 40)
+QUIT_BUTTON_POS = (50, 542, 80, 40)
 BUTTON_FONT = pygame.font.Font(FONT_DARK, 20)
 DECK_FONT = pygame.font.Font(FONT_DARK, 50)
 
@@ -56,7 +59,7 @@ class CardGame:
             text_rect.top = top
             text_rect.left = left
         self.game_display.blit(text_surface, text_rect)
-        # pygame.display.update()
+        pygame.display.update()
 
     def display_image(self, image, location=(0,0)):
         img = pygame.image.load(image)
@@ -100,9 +103,12 @@ class CardGame:
         self.display_image(DECK_BACK, RIGHT_PLAYER_DECK_POS)
         self.message_display(str(player1), top=RIGHT_PLAYER_DECK_POS[1], left=RIGHT_PLAYER_DECK_POS[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
 
-    # def update_deck():
-    #     self.game_display.fill(COLOR_WHITE)
-    #     self.display_deck(len(hand1), len(hand2))
+    def display_war_hand(self, hand):
+        self.display_image(DECK_BACK, LEFT_WAR_HAND)
+        self.display_image(DECK_BACK, RIGHT_WAR_HAND)
+        cards = int(len(hand)/2)
+        self.message_display(str(cards), top=LEFT_WAR_HAND[1], left=LEFT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
+        self.message_display(str(cards), top=RIGHT_WAR_HAND[1], left=RIGHT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
     
     def start(self):
         self.display_image(INTRO_BACKGROUND)
@@ -114,18 +120,27 @@ class CardGame:
     def game_loop(self):
         deck = game.create_deck()
         hand1, hand2 = game.deal_deck(deck)
+
+        hand2=copy.deepcopy(hand1)
+
         self.display_deck(len(hand1), len(hand2))
         play_button = self.create_button(
             'PLAY', *PLAY_BUTTON_POS, self.put_card
         )
+        quit_button = self.create_button(
+            'EXIT', *QUIT_BUTTON_POS, self.game_exit
+        )
         buttons = [
-            play_button
+            play_button,
+            quit_button
         ]
         
         self.game_display.fill(COLOR_WHITE)
         for button in buttons:
             self.draw_button(self.game_display, button)
         pygame.display.update()
+
+        war_hand = None
 
         while not self.game_exit:
             if len(hand1) == 0 or len(hand2) == 0:
@@ -142,42 +157,44 @@ class CardGame:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         for button in buttons:
-                            if button['rect'].collidepoint(event.pos):            
-                                self.game_display.fill(COLOR_WHITE)
-                                self.display_deck(len(hand1), len(hand2))  
+                            if button['rect'].collidepoint(event.pos):
+                                # self.display_deck(len(hand1), len(hand2))  
+                                # if war_hand:
+                                #     self.display_war_hand(war_hand)
                                 player1_card = button['callback'](hand1, RIGHT_PLAYER_CARD_POS[:2])
                                 time.sleep(1)
                                 player2_card = button['callback'](hand2, LEFT_PLAYER_CARD_POS[:2])
                                 time.sleep(1)
-                                self.game_display.fill(COLOR_WHITE)
+                                # self.game_display.fill(COLOR_WHITE)
                                 
                                 if player1_card.rank > player2_card.rank:
                                     hand1.push(player1_card)
                                     hand1.push(player2_card)
+                                    war_hand = None
                                     break
                                 elif player1_card.rank < player2_card.rank:
                                     hand2.push(player2_card)
                                     hand2.push(player1_card)
+                                    war_hand = None
                                     break
                                 else:
                                     # war
                                     self.message_display('WAR!!!!',color=COLOR_RED, center=((DISPLAY_WIDTH/2), (RIGHT_PLAYER_CARD_POS[1]-50)), font_size=50, font=NORMAL_FONT)
                                     time.sleep(1)
-                                
-                                        # print('WAR!!')
-                                        # if len(hand1) < 4:
-                                        #     print('Player 2 wins game')
-                                        #     exit(0)
-                                        #     break
-                                        # if len(hand2) < 4:
-                                        #     print('Player 1 wins game')
-                                        #     exit(0)
-                                        #     break
-                                        # war_hand = PlayerHand('war')
-                                        # for _ in range(3):
-                                        #     war_hand.push(hand2.pop())
-                                        # for _ in range(3):
-                                        #     war_hand.push(hand1.pop())
+                                    if len(hand1) < 4:
+                                        print('Player 2 wins game')
+                                        exit(0)
+                                        break
+                                    if len(hand2) < 4:
+                                        print('Player 1 wins game')
+                                        exit(0)
+                                        break
+                                    if war_hand ==None:
+                                        war_hand = game.PlayerHand('war')
+                                    for _ in range(3):
+                                        war_hand.push(hand2.pop())
+                                    for _ in range(3):
+                                        war_hand.push(hand1.pop())
 
             # right player button
             # self.button()
@@ -202,10 +219,13 @@ class CardGame:
             
 
             # self.game_display.fill(COLOR_WHITE)
-            self.display_deck(len(hand1), len(hand2))    
-            for button in buttons:
-                self.draw_button(self.game_display, button)
-            pygame.display.update()
+                            self.game_display.fill(COLOR_WHITE)
+                            self.display_deck(len(hand1), len(hand2))    
+                            if war_hand:
+                                self.display_war_hand(war_hand)
+                            for button in buttons:
+                                self.draw_button(self.game_display, button)
+                            pygame.display.update()
             self.clock.tick(60)
             
 

@@ -68,7 +68,7 @@ class PlayerHand(card.Card):
         return player_card
         
     def __len__(self):
-        return self.cards
+        return int(self.cards)
 
     def __str__(self):
         return '{}: {} cards left'.format(self.name, self.cards)
