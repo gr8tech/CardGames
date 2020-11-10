@@ -2,25 +2,19 @@ import pygame
 from . import game
 import time
 import copy
+import gui
 
-
-pygame.init()
+from pygame_textinput import TextInput
     
 GAME_TITLE = 'WAR'
-DISPLAY_WIDTH = 800
-DISPLAY_HEIGHT = 600
-COLOR_WHITE = (255, 255, 255)
-COLOR_RED = (255, 0, 0)
-COLOR_OFFWHITE = (180, 180, 180)
-COLOR_BLACK = (0, 0, 0)
-COLOR_BLUE = (33, 40, 227)
-COLOR_HOVER_BLUE = (99, 103, 231)
+
 FONT_SIZE = 120
 FONT_DARK = 'fonts/pdark.ttf'
 NORMAL_FONT = 'fonts/ShareTechMono-Regular.ttf'
 CARDS_FONT = 'fonts/cards.ttf'
 INTRO_BACKGROUND = 'images/cards2.jpg'
 DECK_BACK = 'images/back.png'
+
 TABLE_MAT_WIDTH = 699
 TABLE_MAT_HEIGHT = 264
 TABLE_MAT_POS = (51, 168)
@@ -32,38 +26,20 @@ RIGHT_WAR_HAND = (570, 234.5)
 RIGHT_PLAYER_DECK_POS = (648, 451)
 PLAY_BUTTON_POS = (540, 542, 80, 40)
 QUIT_BUTTON_POS = (50, 542, 80, 40)
-BUTTON_FONT = pygame.font.Font(FONT_DARK, 20)
+
 DECK_FONT = pygame.font.Font(FONT_DARK, 50)
 
 
 class CardGame:
 
-    def __init__(self):
-        self.game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
-        self.game_display.fill(COLOR_OFFWHITE)
+    def __init__(self, g):
+        self.g = g
+        self.screen = self.g.screen
+        self.g.screen.fill(gui.OFFWHITE)
         pygame.display.set_caption(GAME_TITLE)
-        self.clock = pygame.time.Clock()
         self.game_exit = False
         self.local_hand = None
-
-    def text_objects(self, message, font, color):
-        text_surface = font.render(message, True, color)
-        return text_surface, text_surface.get_rect()
-
-    def message_display(self, message, color=COLOR_BLACK, center = ((DISPLAY_WIDTH/2), (DISPLAY_HEIGHT/2)), font=FONT_DARK, top=None, left=None, font_size=120):
-        font = pygame.font.Font(font, font_size)
-        text_surface, text_rect = self.text_objects(message, font, color)
-        if not top and not left:
-            text_rect.center = center
-        else:
-            text_rect.top = top
-            text_rect.left = left
-        self.game_display.blit(text_surface, text_rect)
-        pygame.display.update()
-
-    def display_image(self, image, location=(0,0)):
-        img = pygame.image.load(image)
-        self.game_display.blit(img, location)
+        
 
     def put_card(self, hand, pos):
         # play game
@@ -72,50 +48,72 @@ class CardGame:
             color = COLOR_RED
         else:
             color = COLOR_BLACK
-        self.message_display(player_card.font, top=pos[1], left=pos[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
+        self.g.message_display(player_card.font, top=pos[1], left=pos[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
         pygame.display.update()
         return player_card
 
-    def draw_button(self, screen, button):
-        pygame.draw.rect(screen, button['color'], button['rect'])
-        screen.blit(button['title'], button['title_rect'])
-
-    def create_button(self, title, x,y,width,height, callback):
-        text_mid_point_x = x + width/2
-        text_mid_point_y = y + height/2
-        button_rect = pygame.Rect(x,y,width,height)
-        text_surface = BUTTON_FONT.render(title, True, COLOR_WHITE)
-        text_rect = text_surface.get_rect(center=button_rect.center)
-        button = {
-            'rect': button_rect,
-            'title': text_surface,
-            'title_rect': text_rect,
-            'color': COLOR_BLUE,
-            'callback': callback
-        }
-        return button
-
     def display_deck(self, player1=0, player2=0):
         # Left player
-        self.display_image(DECK_BACK, LEFT_PLAYER_DECK_POS)
-        self.message_display(str(player2), top=LEFT_PLAYER_DECK_POS[1], left=LEFT_PLAYER_DECK_POS[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
+        self.g.display_image(DECK_BACK, LEFT_PLAYER_DECK_POS)
+        self.g.message_display(str(player2), top=LEFT_PLAYER_DECK_POS[1], left=LEFT_PLAYER_DECK_POS[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
         # Right player
-        self.display_image(DECK_BACK, RIGHT_PLAYER_DECK_POS)
-        self.message_display(str(player1), top=RIGHT_PLAYER_DECK_POS[1], left=RIGHT_PLAYER_DECK_POS[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
+        self.g.display_image(DECK_BACK, RIGHT_PLAYER_DECK_POS)
+        self.g.message_display(str(player1), top=RIGHT_PLAYER_DECK_POS[1], left=RIGHT_PLAYER_DECK_POS[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
 
     def display_war_hand(self, hand):
-        self.display_image(DECK_BACK, LEFT_WAR_HAND)
-        self.display_image(DECK_BACK, RIGHT_WAR_HAND)
+        self.g.display_image(DECK_BACK, LEFT_WAR_HAND)
+        self.g.display_image(DECK_BACK, RIGHT_WAR_HAND)
         cards = int(len(hand)/2)
-        self.message_display(str(cards), top=LEFT_WAR_HAND[1], left=LEFT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
-        self.message_display(str(cards), top=RIGHT_WAR_HAND[1], left=RIGHT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
+        self.g.message_display(str(cards), top=LEFT_WAR_HAND[1], left=LEFT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
+        self.g.message_display(str(cards), top=RIGHT_WAR_HAND[1], left=RIGHT_WAR_HAND[0], font_size=50, color=COLOR_BLACK, font=NORMAL_FONT)
     
+    def display_splash(self):
+        self.g.screen.fill(gui.WHITE)
+        self.g.display_image(INTRO_BACKGROUND)
+        self.g.display_text(gui.TITLE_FONT, 'WAR', gui.RED, (gui.DISPLAY_WIDTH/2, gui.DISPLAY_HEIGHT/2) )
+        # pygame.display.update()
+
+    def display_textinput(self, textinput, events):
+        # input background rect
+        rect = pygame.Rect(20, gui.DISPLAY_HEIGHT-102, 300, 30)
+        # Feed input with events every frame
+        textinput.update(events)
+        # Blit its surface onto the screen
+        pygame.draw.rect(self.g.screen, gui.WHITE, rect)
+        self.g.screen.blit(textinput.get_surface(), (25, gui.DISPLAY_HEIGHT-100))
+
     def start(self):
-        self.display_image(INTRO_BACKGROUND)
-        self.message_display('WAR', COLOR_RED)
-        pygame.display.update()
-        time.sleep(2)
-        self.game_loop()
+        textinput = TextInput(text_color=gui.RED)
+        clock = pygame.time.Clock()
+        print(textinput.get_surface().get_rect())
+
+        while True:
+            self.display_splash()
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    exit()
+
+            self.display_textinput(textinput, events)
+
+            pygame.display.update()
+            clock.tick(60)
+
+    # def start(self):
+    #     self.display_splash()
+    #     # self.game_loop()
+    #     # Create TextInput-object
+    #     textinput = TextInput(text_color=gui.RED)
+    #     while True:
+    #         events = pygame.event.get()
+    #         for event in events:
+    #             if event.type == pygame.QUIT:
+    #                 exit()
+    #         textinput.update(events)
+    #         # Blit its surface onto the screen
+    #         self.g.screen.blit(textinput.get_surface(), (100, 500))
+    #         pygame.display.update()
+    #         self.g.clock.tick(60)
 
     def game_loop(self):
         deck = game.create_deck()
@@ -179,7 +177,7 @@ class CardGame:
                                     break
                                 else:
                                     # war
-                                    self.message_display('WAR!!!!',color=COLOR_RED, center=((DISPLAY_WIDTH/2), (RIGHT_PLAYER_CARD_POS[1]-50)), font_size=50, font=NORMAL_FONT)
+                                    self.g.message_display('WAR!!!!',color=COLOR_RED, center=((DISPLAY_WIDTH/2), (RIGHT_PLAYER_CARD_POS[1]-50)), font_size=50, font=NORMAL_FONT)
                                     time.sleep(1)
                                     if len(hand1) < 4:
                                         print('Player 2 wins game')
@@ -205,14 +203,14 @@ class CardGame:
             #     color = COLOR_RED
             # else:
             #     color = COLOR_BLACK
-            # self.message_display(player1_card.font, top=RIGHT_PLAYER_CARD_POS[1], left=RIGHT_PLAYER_CARD_POS[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
+            # self.g.message_display(player1_card.font, top=RIGHT_PLAYER_CARD_POS[1], left=RIGHT_PLAYER_CARD_POS[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
             # time.sleep(2)
             # player2_card = hand2.pop()
             # if player2_card.symbol['short'] == 'D' or player2_card.symbol['short'] == 'H':
             #     color = COLOR_RED
             # else:
             #     color = COLOR_BLACK
-            # self.message_display(player2_card.font, top=LEFT_PLAYER_CARD_POS[1], left=LEFT_PLAYER_CARD_POS[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
+            # self.g.message_display(player2_card.font, top=LEFT_PLAYER_CARD_POS[1], left=LEFT_PLAYER_CARD_POS[0], font_size=FONT_SIZE, color=color, font=CARDS_FONT)
             # time.sleep(2)
             # war_hand = None
 
