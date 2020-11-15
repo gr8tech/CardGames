@@ -8,16 +8,8 @@ pygame.init()
 DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 600
 
-# declare colors
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-OFFWHITE = (180, 180, 180)
-BLACK = (0, 0, 0)
-DARK_BLUE = (33, 40, 227)
-LIGHT_BLUE = (99, 103, 231)
-
 # declare fonts
-LARGE_FONT_SIZE = 80
+LARGE_FONT_SIZE = 60
 MID_FONT_SIZE = 50
 SMALL_FONT_SIZE = 20
 GAME_FONT_PATH = 'fonts/pdark.ttf'
@@ -25,36 +17,42 @@ REGULAR_FONT_PATH = 'fonts/ShareTechMono-Regular.ttf'
 TITLE_FONT = pygame.font.Font(GAME_FONT_PATH, LARGE_FONT_SIZE)
 BUTTON_FONT = pygame.font.Font(REGULAR_FONT_PATH, SMALL_FONT_SIZE)
 
-TITLE_POS = (DISPLAY_WIDTH/2, LARGE_FONT_SIZE/2)
+# default position for titles
+TITLE_POS = (DISPLAY_WIDTH/2, LARGE_FONT_SIZE)
 
+# default button dimensions
 BUTTON_WIDTH = 120
 BUTTON_HEIGHT = 40
 
 class Button:
 
-    def __init__(self, rect, text_surf, text_rect, color, callback, args=None):
+    def __init__(self, rect, text_surf, text_rect, color, callback, kwargs=None):
         self.rect = rect
         self.text_surf = text_surf
         self.text_rect = text_rect
         self.color = color
         self.callback = callback
-        self.args = args
+        self.kwargs = kwargs
 
 class GUI:
 
-    def __init__(self, title):
-        self.game_display = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    def __init__(self, title, display_width=DISPLAY_WIDTH, display_height=DISPLAY_HEIGHT):
+        # create the game screen
+        self.screen = pygame.display.set_mode((display_width, display_height))
+        # set window title
         pygame.display.set_caption(title)
+        # game clock
+        self.clock = pygame.time.Clock()
 
     def display_text(self, font, message, color, center):
         text_surface = font.render(message, True, color)
         text_rect = text_surface.get_rect(center=center)
-        self.game_display.blit(text_surface, text_rect)
+        self.screen.blit(text_surface, text_rect)
         return text_surface, text_rect
 
     def display_image(self, image, location=(0,0)):
         img = pygame.image.load(image)
-        self.game_display.blit(img, location)
+        self.screen.blit(img, location)
 
     def draw_button(self, screen, button):
         pygame.draw.rect(screen, button.color, button.rect)
@@ -74,54 +72,6 @@ class GUI:
             args
         )
         return button
-
-    # def loop(self):
-    #     clock = pygame.time.Clock()
-        
-    #     buttons = [
-    #         self.create_button('QUIT', *QUIT_BUTTON_DIM, self.game_quit)
-    #     ]
-
-    #     # load list of games, max: 30
-    #     locations = []
-    #     for j in range(6):
-    #         for i in range(5):
-    #             x = 49 + ((BUTTON_WIDTH + 20) * i)
-    #             y = 120 + ((BUTTON_HEIGHT + 20) * j)
-    #             locations.append((x, y))
-    #     for i, game in enumerate(config.games[:30]):
-    #         print(game['module'])
-    #         buttons.append(
-    #             self.create_button(game['name'], *locations[i], BUTTON_WIDTH, BUTTON_HEIGHT, self.launch_game, game['module'])   
-    #         )
-  
-
-    #     while True:
-
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 self.game_quit()
-    #             elif event.type == pygame.MOUSEMOTION:
-    #                 for button in buttons:
-    #                     if button.rect.collidepoint(event.pos):
-    #                         button.color = LIGHT_BLUE
-    #                     else:
-    #                         button.color = DARK_BLUE
-    #             elif event.type == pygame.MOUSEBUTTONDOWN:
-    #                 for button in buttons:
-    #                     if button.rect.collidepoint(event.pos):
-    #                         if button.args:
-    #                             button.callback(button.args)
-    #                         else:
-    #                             button.callback()
-
-
-    #         self.game_display.fill(BLACK) 
-    #         self.display_text(TITLE_FONT, 'LAUNCHER', RED, TITLE_POS)
-    #         for button in buttons:
-    #             self.draw_button(self.game_display, button)
-    #         pygame.display.update()
-    #         clock.tick(60)
             
     def game_quit(self):
         pygame.quit()
@@ -129,4 +79,10 @@ class GUI:
 
 if __name__ == "__main__":
     g = GUI('A new window')
+    pygame.display.update()
+    while True:
+        g.screen.fill(BLACK) 
+        g.display_text(TITLE_FONT, 'LAUNCHER', RED, TITLE_POS)
+        pygame.display.update()
+        g.clock.tick(60)
     
