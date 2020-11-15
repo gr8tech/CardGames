@@ -8,22 +8,9 @@ import random
 # initialize pygame
 pygame.init()
 
-# set up game screen
-screen = pygame.display.set_mode( (settings.GAME_WIDTH, settings.GAME_HEIGHT) )
-pygame.display.set_caption(settings.GAME_TITLE)
-
-# draw a card
-x_0 = settings.X_0 - (settings.CARD_WIDTH / 2)
-y_0 = settings.Y_0 - (settings.CARD_HEIGHT / 2)
-joker = 'joker.png'
-deck = 'assets/cards/deck.png'
-factor = 0.75
-
+# common variables
 ACTIVE_COLOR = 'lightblue'
 INACTIVE_COLOR = 'blue'
-
-# game clock
-clock = pygame.time.Clock()
 
 # default button dimensions
 BUTTON_WIDTH = 120
@@ -38,17 +25,34 @@ REGULAR_FONT_PATH = 'assets/fonts/ShareTechMono-Regular.ttf'
 TITLE_FONT = pygame.font.Font(GAME_FONT_PATH, LARGE_FONT_SIZE)
 BUTTON_FONT = pygame.font.Font(REGULAR_FONT_PATH, SMALL_FONT_SIZE)
 
-class Button:
+class Hand(list):
+    '''
+    A group of cards
+    '''
+    def __init__(self, type):
+        list.__init__(self)
+        # layout position of hand
+        self.type = type
 
+class Button:
+    '''
+    Represents a button in the game
+    '''
     def __init__(self, rect, text_surf, text_rect, color, callback, kwargs=None):
+        # button rect
         self.rect = rect
+        # button text 
         self.text_surf = text_surf
         self.text_rect = text_rect
+        # button color
         self.color = color
+        # callback function when the button is clicked
         self.callback = callback
 
 class Layout:
-
+    '''
+    Layout of Hands in the game
+    '''
     def __init__(self, x_0, y_0):
         self.x_0 = x_0
         self.y_0 =y_0
@@ -108,11 +112,21 @@ class Layout:
         }
         return layouts
 
-class Hand(list):
+# set up game screen
+screen = pygame.display.set_mode( (settings.GAME_WIDTH, settings.GAME_HEIGHT) )
+pygame.display.set_caption(settings.GAME_TITLE)
 
-    def __init__(self, type):
-        list.__init__(self)
-        self.type = type
+# draw a card
+x_0 = settings.X_0 - (settings.CARD_WIDTH / 2)
+y_0 = settings.Y_0 - (settings.CARD_HEIGHT / 2)
+joker = 'joker.png'
+deck = 'assets/cards/deck.png'
+factor = 0.75
+
+
+
+# game clock
+clock = pygame.time.Clock()
 
 def display_stack(screen, hand, x_0, y_0):
     if hand.type == 'joker':
@@ -221,10 +235,6 @@ def play():
             del selected[pos]
             hands[pos].pop()
             check_win()
-
-    # print(selected)
-    # print(undo)
-
 
 layout = Layout(x_0, y_0)
 
