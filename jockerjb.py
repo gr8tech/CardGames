@@ -30,6 +30,24 @@ deck = 'assets/cards/deck.png'
 factor = 0.75
 spacer = 3
 
+class Win(pygame.sprite.Sprite):
+
+    def __init__(self, x_0, y_0):
+        super().__init__()
+        self.sprite = []
+        for i in range(1,4):
+            self.sprite.append(pygame.image.load('assets/win/win%s.gif'%i))
+        self.image = self.sprite[0]
+        self.rect = self.image.get_rect()
+        self.rect.topleft = [x_0, y_0]
+        self.current_image = 0
+    
+    def update(self):
+        self.image = self.sprite[int(self.current_image)]
+        self.current_image += 0.2
+        if self.current_image >= len(self.sprite):
+            self.current_image = 0 
+
 class Hand(list):
     '''
     A group of cards
@@ -148,6 +166,11 @@ class JockerJB:
         # undo buffer
         self.undo = []
 
+        # win/lose condition
+        self.win = False
+        self.lose = False
+
+
     def display_stack(self, hand, x_0, y_0):
         img_back = pygame.image.load(deck)
         img_back = pygame.transform.rotozoom(img_back, 0, 0.75)
@@ -203,21 +226,31 @@ class JockerJB:
         pygame.quit()
         quit()
 
+    def game_over(func):
+        def inner(self):
+            if self.win == False and self.lose == False:
+                func(self)
+        return inner
+
     def check_win(self):
         layouts = self.layout.get_layouts()
         for pos in layouts:
             if (pos != 'C' or pos !='D') and layouts[pos]['type'] == 'wall':
                 if len(self.hands[pos]) == 0:
-                    print('YOU WIN')
-                    self.game_quit()
+                    self.win = True
+        for pos in layouts:
+            if (len(self.hands[pos]) == 0) and (self.hands[pos] == 'wall'):
+                self.win = True
 
     def new_game(self):
         self.start()
-
+    
+    @game_over
     def restart_play(self):
         while len(self.undo) > 0:
             self.undo_play()
 
+    @game_over
     def undo_play(self):
         if self.undo:
             move = self.undo.pop()
@@ -228,6 +261,7 @@ class JockerJB:
                     print(self.hands['C'])
                     self.hands['C'].pop()
 
+    @game_over
     def play(self):
         selection = []
         blacks = 0
@@ -257,7 +291,7 @@ class JockerJB:
             for pos in selection:
                 del self.selected[pos]
                 self.hands[pos].pop()
-                self.check_win()
+        self.check_win()
 
     def draw_cards(self):
         # buffer for Hands
@@ -310,6 +344,15 @@ class JockerJB:
         self.draw_cards()
         self.create_buttons()
 
+        # reset win/lose
+        self.win = False
+        self.lose = False
+
+        # Win Animation
+        win = Win(100, 200)
+        grp = pygame.sprite.Group()
+        grp.add(win)
+
         while True:
 
             # event loop
@@ -351,9 +394,6 @@ class JockerJB:
                             button.color = INACTIVE_COLOR    
 
             self.screen.fill(pygame.Color(settings.SCREEN_BACKGROUND))
-
-        #     cards = 2
-        #     
             
             # draw cards
             layouts = self.layout.get_layouts()
@@ -364,17 +404,19 @@ class JockerJB:
                         card_img = pygame.image.load(settings.CARDS + self.hands[pos][-1])
                         card_img = pygame.transform.rotozoom(card_img, 0, 0.75)
                         self.screen.blit(card_img, (layouts[pos]['x_0'], layouts[pos]['y_0']))
-                else:
-                    if hand.type == 'wall':
-                        print('You Win!!')
-                        pygame.quit()
-                        quit()
 
             # highlight selected hands
             for pos in self.selected:
                 s = pygame.Surface((self.rects[pos][2], self.rects[pos][3]), pygame.SRCALPHA)
                 s.fill((255,0,0,128))
                 self.screen.blit(s, (self.rects[pos][0], self.rects[pos][1]))
+
+            # displya win or lose animations
+            if self.win:
+                grp.draw(self.screen)
+                grp.update()
+            if self.lose:
+                pass
 
             # draw buttons
             for button in self.buttons:
