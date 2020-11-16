@@ -261,6 +261,7 @@ class JockerJB:
                 if item['source'] == 'joker':
                     print(self.hands['C'])
                     self.hands['C'].pop()
+        self.selected = dict()
 
     @game_over
     def play(self):
