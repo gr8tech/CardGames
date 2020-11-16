@@ -348,6 +348,9 @@ class JockerJB:
         self.win = False
         self.lose = False
 
+        # reset selected
+        self.selected = dict()
+
         # Win Animation
         win = Win(100, 200)
         grp = pygame.sprite.Group()
