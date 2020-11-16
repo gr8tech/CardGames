@@ -249,6 +249,7 @@ class JockerJB:
     def restart_play(self):
         while len(self.undo) > 0:
             self.undo_play()
+        self.selected = dict()
 
     @game_over
     def undo_play(self):
