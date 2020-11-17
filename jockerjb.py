@@ -4,6 +4,7 @@ import re
 import settings
 import random
 
+from itertools import combinations
 
 # initialize pygame
 pygame.init()
@@ -37,6 +38,24 @@ class Win(pygame.sprite.Sprite):
         self.sprite = []
         for i in range(1,4):
             self.sprite.append(pygame.image.load('assets/win/win%s.gif'%i))
+        self.image = self.sprite[0]
+        self.rect = self.image.get_rect()
+        self.rect.topleft = [x_0, y_0]
+        self.current_image = 0
+    
+    def update(self):
+        self.image = self.sprite[int(self.current_image)]
+        self.current_image += 0.2
+        if self.current_image >= len(self.sprite):
+            self.current_image = 0 
+
+class Lose(pygame.sprite.Sprite):
+
+    def __init__(self, x_0, y_0):
+        super().__init__()
+        self.sprite = []
+        for i in range(1,4):
+            self.sprite.append(pygame.image.load('assets/lose/lose%s.gif'%i))
         self.image = self.sprite[0]
         self.rect = self.image.get_rect()
         self.rect.topleft = [x_0, y_0]
@@ -170,6 +189,7 @@ class JockerJB:
         self.win = False
         self.lose = False
 
+        self.cl = True
 
     def display_stack(self, hand, x_0, y_0):
         img_back = pygame.image.load(deck)
@@ -235,12 +255,8 @@ class JockerJB:
     def check_win(self):
         layouts = self.layout.get_layouts()
         for pos in layouts:
-            if (pos != 'C' or pos !='D') and layouts[pos]['type'] == 'wall':
-                if len(self.hands[pos]) == 0:
+            if (layouts[pos]['type'] == 'wall') and (len(self.hands['C']) == 1) and (len(self.hands[pos]) == 0):
                     self.win = True
-        for pos in layouts:
-            if (len(self.hands[pos]) == 0) and (self.hands[pos] == 'wall'):
-                self.win = True
 
     def new_game(self):
         self.start()
@@ -294,6 +310,44 @@ class JockerJB:
                 del self.selected[pos]
                 self.hands[pos].pop()
         self.check_win()
+
+    def valid_play(self, cards):
+        blacks = 0
+        reds = 0
+        for card in cards:
+            res = re.search('(\w)_(\d+)', card)
+            card_type = res.group(1)
+            card_value = int(res.group(2))
+            if card_type.startswith('S') or card_type.startswith('C'):
+                blacks += card_value
+            elif card_type.startswith('D') or card_type.startswith('H'):
+                reds += card_value
+        if blacks == reds:
+            return blacks
+        else:
+            return False
+
+
+    @game_over
+    def check_lose(self):
+        combos = 0
+        if len(self.hands['C']) == 4:
+            top_cards = []
+            for pos in self.hands:
+                if pos != 'D' and len(self.hands[pos]) >=  1:
+                    top_cards.append(self.hands[pos][-1])
+            plays = []
+            for i in range(2, len(top_cards) + 1):
+                play = combinations(top_cards, i)
+                for cards in play:
+                    res = self.valid_play(cards)
+                    if res:
+                        # combos += 1
+                        # print(cards, res)
+                        return
+            self.lose = True
+
+                    
 
     def draw_cards(self):
         # buffer for Hands
@@ -355,8 +409,13 @@ class JockerJB:
 
         # Win Animation
         win = Win(100, 200)
-        grp = pygame.sprite.Group()
-        grp.add(win)
+        win_grp = pygame.sprite.Group()
+        win_grp.add(win)
+
+        # Lose Animation
+        lose = Lose(100, 200)
+        lose_grp = pygame.sprite.Group()
+        lose_grp.add(lose)
 
         while True:
 
@@ -370,6 +429,8 @@ class JockerJB:
                         if len(self.hands[pos]) > 0:
                             if self.rects[pos].collidepoint(event.pos):
                                 if pos == 'D':
+                                    if self.win or self.lose:
+                                        continue
                                     if len(self.hands['C']) < 4 and len(self.hands['D']) > 0:                        
                                         print('Deck selected')
                                         self.hands['C'].append(self.hands['D'].pop())
@@ -418,10 +479,13 @@ class JockerJB:
 
             # displya win or lose animations
             if self.win:
-                grp.draw(self.screen)
-                grp.update()
+                win_grp.draw(self.screen)
+                win_grp.update()
             if self.lose:
-                pass
+                lose_grp.draw(self.screen)
+                lose_grp.update()
+
+            self.check_lose()
 
             # draw buttons
             for button in self.buttons:
