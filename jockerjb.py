@@ -4,6 +4,8 @@ import re
 import settings
 import random
 
+import argparse
+
 from itertools import combinations
 
 # initialize pygame
@@ -25,6 +27,7 @@ GAME_FONT_PATH = 'assets/fonts/pdark.ttf'
 REGULAR_FONT_PATH = 'assets/fonts/ShareTechMono-Regular.ttf'
 TITLE_FONT = pygame.font.Font(GAME_FONT_PATH, LARGE_FONT_SIZE)
 BUTTON_FONT = pygame.font.Font(REGULAR_FONT_PATH, SMALL_FONT_SIZE)
+STATS_FONT = pygame.font.Font(REGULAR_FONT_PATH, SMALL_FONT_SIZE)
 
 joker = 'joker.png'
 deck = 'assets/cards/deck.png'
@@ -159,7 +162,11 @@ class JockerJB:
     Jocker Jail Break main class
     '''
 
-    def __init__(self):
+    def __init__(self, player):
+        self.player = player
+        self.played = 0
+        self.streak = 0
+
         # set up game screen
         self.screen = pygame.display.set_mode( (settings.GAME_WIDTH, settings.GAME_HEIGHT) )
         pygame.display.set_caption(settings.GAME_TITLE)
@@ -218,10 +225,11 @@ class JockerJB:
         random.shuffle(cards)
         return cards
 
-    def display_text(self, font, message, color, center):
+    def display_text(self, font, message, color, center, show=True):
         text_surface = font.render(message, True, color)
         text_rect = text_surface.get_rect(center=center)
-        self.screen.blit(text_surface, text_rect)
+        if show:
+            self.screen.blit(text_surface, text_rect)
         return text_surface, text_rect
 
     def draw_button(self, button):
@@ -257,6 +265,8 @@ class JockerJB:
         for pos in layouts:
             if (layouts[pos]['type'] == 'wall') and (len(self.hands['C']) == 1) and (len(self.hands[pos]) == 0):
                     self.win = True
+                    self.streak += 1
+                    self.played += 1
 
     def new_game(self):
         self.start()
@@ -342,12 +352,9 @@ class JockerJB:
                 for cards in play:
                     res = self.valid_play(cards)
                     if res:
-                        # combos += 1
-                        # print(cards, res)
                         return
             self.lose = True
-
-                    
+            self.played += 1
 
     def draw_cards(self):
         # buffer for Hands
@@ -378,6 +385,18 @@ class JockerJB:
         main_deck = Hand('main')
         main_deck.extend(self.cards)
         self.hands['D'] = main_deck
+
+    def show_stats(self):
+        stats_labels = [
+            self.display_text(STATS_FONT, 'Player: %s'%self.player, pygame.Color('White'), (100, 15), show=False),
+            self.display_text(STATS_FONT, 'Games Played: %s'%self.played, pygame.Color('White'), (100, 45), show=False),
+            self.display_text(STATS_FONT, 'Streak: %s'%self.streak, pygame.Color('White'), (100, 75), show=False),
+        ]
+        for label in stats_labels:
+            text_surface = label[0]
+            text_rect = label[1]
+            text_rect.x = 10
+            self.screen.blit(text_surface, text_rect)
 
     def create_buttons(self):
         # game buttons
@@ -491,9 +510,17 @@ class JockerJB:
             for button in self.buttons:
                 self.draw_button(button)
 
+            # show player stats
+            self.show_stats()
+
             pygame.display.update()
             self.clock.tick(settings.GAME_FRAMES)
 
 if __name__ == "__main__":
-    game = JockerJB()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--name')
+    args = parser.parse_args()
+
+    game = JockerJB(args.name)
     game.start()
