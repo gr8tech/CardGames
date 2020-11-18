@@ -428,9 +428,9 @@ class JockerJB:
                     for pos in self.rects:
                         if len(self.hands[pos]) > 0:
                             if self.rects[pos].collidepoint(event.pos):
-                                if pos == 'D':
-                                    if self.win or self.lose:
+                                if self.win or self.lose:
                                         continue
+                                if pos == 'D':
                                     if len(self.hands['C']) < 4 and len(self.hands['D']) > 0:                        
                                         print('Deck selected')
                                         self.hands['C'].append(self.hands['D'].pop())
