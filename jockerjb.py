@@ -14,6 +14,8 @@ pygame.init()
 # common variables
 ACTIVE_COLOR = 'lightblue'
 INACTIVE_COLOR = 'blue'
+DARKGREEN = (0,104,55)
+HIGHLIGHTED = (255,0,0,128)
 
 # default button dimensions
 BUTTON_WIDTH = 120
@@ -31,6 +33,16 @@ STATS_FONT = pygame.font.Font(REGULAR_FONT_PATH, SMALL_FONT_SIZE)
 
 joker = 'joker.png'
 deck = 'assets/cards/deck.png'
+
+# set up game screen
+SCREEN = pygame.display.set_mode( (settings.GAME_WIDTH, settings.GAME_HEIGHT) )
+pygame.display.set_caption(settings.GAME_TITLE)
+
+# game clock
+CLOCK = pygame.time.Clock()
+
+HELP_MESSAGE = pygame.image.load('assets/help.png').convert_alpha()
+
 factor = 0.75
 spacer = 3
 
@@ -162,17 +174,11 @@ class JockerJB:
     Jocker Jail Break main class
     '''
 
-    def __init__(self, player):
+    def __init__(self, player='Player', help=False):
         self.player = player
+        self.help = help
         self.played = 0
         self.streak = 0
-
-        # set up game screen
-        self.screen = pygame.display.set_mode( (settings.GAME_WIDTH, settings.GAME_HEIGHT) )
-        pygame.display.set_caption(settings.GAME_TITLE)
-
-        # game clock
-        self.clock = pygame.time.Clock()
 
         # start coordinates from drawing Hands and Decks
         self.x_0 = settings.X_0 - (settings.CARD_WIDTH / 2)
@@ -207,15 +213,15 @@ class JockerJB:
                 _d = 20 * (len(hand)-1-i)
                 img = pygame.image.load(settings.CARDS+hand[i])
                 img = pygame.transform.rotozoom(img, 0, 0.65)
-                self.screen.blit(img, (x_0+_d, y_0-_d))
+                SCREEN.blit(img, (x_0+_d, y_0-_d))
         elif hand.type == 'main':
             for i in range(len(hand)-1, -1, -1):
                 _d = spacer * i
-                self.screen.blit(img_back, (x_0+_d, y_0-_d))
+                SCREEN.blit(img_back, (x_0+_d, y_0-_d))
         else:
             for i in range(len(hand)-1, 0, -1):
                 _d = spacer * i
-                self.screen.blit(img_back, (x_0+_d, y_0-_d))
+                SCREEN.blit(img_back, (x_0+_d, y_0-_d))
 
     def create_deck(self):
         cards = []
@@ -229,12 +235,12 @@ class JockerJB:
         text_surface = font.render(message, True, color)
         text_rect = text_surface.get_rect(center=center)
         if show:
-            self.screen.blit(text_surface, text_rect)
+            SCREEN.blit(text_surface, text_rect)
         return text_surface, text_rect
 
     def draw_button(self, button):
-        pygame.draw.rect(self.screen, button.color, button.rect)
-        self.screen.blit(button.text_surf, button.text_rect)
+        pygame.draw.rect(SCREEN, button.color, button.rect)
+        SCREEN.blit(button.text_surf, button.text_rect)
     
     def create_button(self, title, x,y,width,height, callback):
         text_mid_point_x = x + width/2
@@ -303,9 +309,6 @@ class JockerJB:
                 blacks += card_value
             elif card_type.startswith('D') or card_type.startswith('H'):
                 reds += card_value
-
-        print('BLACKS', blacks)
-        print('REDS', reds)
 
         if blacks == reds:
             moves = []
@@ -396,23 +399,40 @@ class JockerJB:
             text_surface = label[0]
             text_rect = label[1]
             text_rect.x = 10
-            self.screen.blit(text_surface, text_rect)
+            SCREEN.blit(text_surface, text_rect)
 
     def create_buttons(self):
         # game buttons
         quit_button = self.create_button('QUIT', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), 10, BUTTON_WIDTH, BUTTON_HEIGHT, self.game_quit)
-        undo_button = self.create_button('UNDO', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 30, BUTTON_WIDTH, BUTTON_HEIGHT, self.undo_play)
-        restart_button = self.create_button('RESTART', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 90, BUTTON_WIDTH, BUTTON_HEIGHT, self.restart_play)
-        newgame_button = self.create_button('NEW GAME', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 150, BUTTON_WIDTH, BUTTON_HEIGHT, self.new_game)
+        help_button = self.create_button('HELP', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 30, BUTTON_WIDTH, BUTTON_HEIGHT, self.game_help)
+        undo_button = self.create_button('UNDO', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 90, BUTTON_WIDTH, BUTTON_HEIGHT, self.undo_play)
+        restart_button = self.create_button('RESTART', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 150, BUTTON_WIDTH, BUTTON_HEIGHT, self.restart_play)
+        newgame_button = self.create_button('NEW GAME', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 210, BUTTON_WIDTH, BUTTON_HEIGHT, self.new_game)
         play_button = self.create_button('PLAY', Layout(self.x_0, self.y_0).get_layouts()['E']['x_0'] + BUTTON_WIDTH + 40, settings.GAME_HEIGHT/2 - 20, BUTTON_WIDTH, BUTTON_HEIGHT, self.play)
         self.buttons = [
             quit_button,
+            help_button,
             play_button,
             undo_button,
             restart_button,
             newgame_button
         ]
 
+    def game_help(self):
+        self.help = True
+        close_button = self.create_button('CLOSE', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), 10, BUTTON_WIDTH, BUTTON_HEIGHT, self.help_close)
+        self.buttons = [close_button]
+
+    def help_close(self):
+        self.help = False
+        self.create_buttons()
+
+    def show_help(self):
+        SCREEN.fill(pygame.Color('lavenderblush4'))
+        x = settings.X_0 - HELP_MESSAGE.get_rect().w/2
+        y = settings.Y_0 - HELP_MESSAGE.get_rect().h/2
+        SCREEN.blit(HELP_MESSAGE, (x, y))
+        
     def start(self):
         # create a deck
         self.cards = self.create_deck()
@@ -467,8 +487,8 @@ class JockerJB:
                                     else:
                                         self.selected[pos] = 1
                     for button in self.buttons:
-                        if button.rect.collidepoint(event.pos):
-                            button.callback()
+                            if button.rect.collidepoint(event.pos):
+                                button.callback()
 
 
                 if event.type == pygame.MOUSEMOTION:
@@ -478,7 +498,7 @@ class JockerJB:
                         else:
                             button.color = INACTIVE_COLOR    
 
-            self.screen.fill(pygame.Color(settings.SCREEN_BACKGROUND))
+            SCREEN.fill(pygame.Color(settings.SCREEN_BACKGROUND))
             
             # draw cards
             layouts = self.layout.get_layouts()
@@ -488,39 +508,44 @@ class JockerJB:
                     if pos != 'D':
                         card_img = pygame.image.load(settings.CARDS + self.hands[pos][-1])
                         card_img = pygame.transform.rotozoom(card_img, 0, 0.75)
-                        self.screen.blit(card_img, (layouts[pos]['x_0'], layouts[pos]['y_0']))
+                        SCREEN.blit(card_img, (layouts[pos]['x_0'], layouts[pos]['y_0']))
 
             # highlight selected hands
             for pos in self.selected:
                 s = pygame.Surface((self.rects[pos][2], self.rects[pos][3]), pygame.SRCALPHA)
-                s.fill((255,0,0,128))
-                self.screen.blit(s, (self.rects[pos][0], self.rects[pos][1]))
+                s.fill(HIGHLIGHTED)
+                SCREEN.blit(s, (self.rects[pos][0], self.rects[pos][1]))
 
-            # displya win or lose animations
+            # display win or lose animations
             if self.win:
-                win_grp.draw(self.screen)
+                win_grp.draw(SCREEN)
                 win_grp.update()
             if self.lose:
-                lose_grp.draw(self.screen)
+                lose_grp.draw(SCREEN)
                 lose_grp.update()
 
             self.check_lose()
+
+            # show player stats
+            self.show_stats()
+
+            # display help
+            if self.help:
+                self.show_help()
 
             # draw buttons
             for button in self.buttons:
                 self.draw_button(button)
 
-            # show player stats
-            self.show_stats()
-
             pygame.display.update()
-            self.clock.tick(settings.GAME_FRAMES)
+            CLOCK.tick(settings.GAME_FRAMES)
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--name')
-    args = parser.parse_args()
-
-    game = JockerJB(args.name)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--name')
+    # parser.add_argument('--help')
+    # args = parser.parse_args()
+    # print(args)
+    game = JockerJB()
     game.start()

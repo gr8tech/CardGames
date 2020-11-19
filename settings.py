@@ -3,7 +3,7 @@ GAME_WIDTH = 1200
 GAME_HEIGHT = 800
 GAME_TITLE = 'Jocker Jail Break'
 GAME_FRAMES = 60
-SCREEN_BACKGROUND = 'darkgreen'
+SCREEN_BACKGROUND = 'lavenderblush4'
 # screen midpoint
 X_0 = GAME_WIDTH/2
 Y_0 = GAME_HEIGHT/2
