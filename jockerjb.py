@@ -174,9 +174,9 @@ class JockerJB:
     Jocker Jail Break main class
     '''
 
-    def __init__(self, player='Player', help=False):
+    def __init__(self, player='Player'):
         self.player = player
-        self.help = help
+        self.help = False
         self.played = 0
         self.streak = 0
 
@@ -209,7 +209,6 @@ class JockerJB:
         img_back = pygame.transform.rotozoom(img_back, 0, 0.75)
         if hand.type == 'joker':
             for i in range(0, len(hand)-1, 1):
-                # print(hand[i+1])
                 _d = 20 * (len(hand)-1-i)
                 img = pygame.image.load(settings.CARDS+hand[i])
                 img = pygame.transform.rotozoom(img, 0, 0.65)
@@ -288,10 +287,8 @@ class JockerJB:
         if self.undo:
             move = self.undo.pop()
             for item in move:
-                print(item)
                 self.hands[item['pos']].append(item['card']) 
                 if item['source'] == 'joker':
-                    print(self.hands['C'])
                     self.hands['C'].pop()
         self.selected = dict()
 
@@ -420,7 +417,7 @@ class JockerJB:
 
     def game_help(self):
         self.help = True
-        close_button = self.create_button('CLOSE', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), 10, BUTTON_WIDTH, BUTTON_HEIGHT, self.help_close)
+        close_button = self.create_button('RESUME', (settings.GAME_WIDTH - 10 - BUTTON_WIDTH), 10, BUTTON_WIDTH, BUTTON_HEIGHT, self.help_close)
         self.buttons = [close_button]
 
     def help_close(self):
@@ -470,8 +467,7 @@ class JockerJB:
                                 if self.win or self.lose:
                                         continue
                                 if pos == 'D':
-                                    if len(self.hands['C']) < 4 and len(self.hands['D']) > 0:                        
-                                        print('Deck selected')
+                                    if len(self.hands['C']) < 4 and len(self.hands['D']) > 0:   
                                         self.hands['C'].append(self.hands['D'].pop())
                                         self.undo.append([{
                                             'pos': pos,
@@ -541,11 +537,5 @@ class JockerJB:
             CLOCK.tick(settings.GAME_FRAMES)
 
 if __name__ == "__main__":
-
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--name')
-    # parser.add_argument('--help')
-    # args = parser.parse_args()
-    # print(args)
     game = JockerJB()
     game.start()
