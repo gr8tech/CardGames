@@ -31,6 +31,21 @@ pygame.init()
 SCREEN = pygame.display.set_mode( (GAME_WIDTH, GAME_HEIGHT) )
 pygame.display.set_caption(GAME_TITLE)
 
+# load sprite image
+try:
+    SPRITE = pygame.image.load('assets/cards/cards.png')
+except FileNotFoundError:
+    print('Game images not found')
+    pygame.quit()
+    quit()
+
+# SPRITE PARAMETERS
+SPRITE_SPACING = 20
+
+# special images in sprite
+JOKER_IMAGE = pygame.rect.Rect(20, 548, CARD_WIDTH, CARD_HEIGHT)
+DECK_BACK_IMAGE = pygame.rect.Rect(320, 548, CARD_WIDTH, CARD_HEIGHT)
+
 # game clock
 CLOCK = pygame.time.Clock()
 
@@ -57,7 +72,7 @@ class Win(pygame.sprite.Sprite):
         # select initial image to display
         self.image = self.sprite[0]
         self.rect = self.image.get_rect()
-        self.rect.topleft = [x_0, y_0]
+        self.rect.center = [x_0, y_0]
         # initial image index
         self.current_image = 0
     
@@ -85,7 +100,7 @@ class Lose(pygame.sprite.Sprite):
             self.sprite.append(pygame.image.load('assets/lose/lose%s.gif'%i))
         self.image = self.sprite[0]
         self.rect = self.image.get_rect()
-        self.rect.topleft = [x_0, y_0]
+        self.rect.center = [x_0, y_0]
         # initial image index
         self.current_image = 0
     
@@ -134,8 +149,8 @@ class Layout:
         Args:
             x_0, y_0 : midpoint of the screen
         '''
-        self.x_0 = x_0
-        self.y_0 =y_0
+        self.x_0 = x_0 - 50
+        self.y_0 =y_0 + 50
 
     def get_layouts(self):
         '''
@@ -190,11 +205,18 @@ class Layout:
             },
             'D': {
                     'type': 'deck',
-                    'x_0': self.x_0 - (2.5 * CARD_WIDTH), 
+                    'x_0': self.x_0 - (3 * CARD_WIDTH), 
                     'y_0': self.y_0
             }
         }
         return layouts
+
+class Card:
+
+    def __init__(self, value, rect, suite):
+        self.value = value
+        self.rect = rect
+        self.suite = suite
 
 class JockerJB:
     '''
@@ -242,35 +264,44 @@ class JockerJB:
         '''
         Displays a stack of cards behind the top cards
         '''
-        img_back = pygame.image.load(DECK_BACK_IMAGE)
-        img_back = pygame.transform.rotozoom(img_back, 0, 0.75)
         # stack on top of the Joker
         if hand.type == 'joker':
             for i in range(0, len(hand) - 1, 1):
-                _d = 20 * (len(hand) - 1 - i)
-                img = pygame.image.load(CARDS + hand[i])
-                img = pygame.transform.rotozoom(img, 0, 0.65)
-                SCREEN.blit(img, (x_0 + _d, y_0 - _d))
+                _d = 10 * (len(hand) - 1 - i)
+                # img = pygame.image.load(CARDS + hand[i])
+                # img = pygame.transform.rotozoom(img, 0, 0.65)
+                SCREEN.blit(SPRITE, (x_0 + _d, y_0 - _d), hand[i])
         # stack behind the spare deck
         elif hand.type == 'main':
             for i in range(len(hand)-1, -1, -1):
                 _d = CARD_SPACING * i
-                SCREEN.blit(img_back, (x_0+_d, y_0-_d))
-        # stack behid the walls and pillars
+                SCREEN.blit(SPRITE, (x_0+_d, y_0-_d), DECK_BACK_IMAGE)
+        # stack behind the walls and pillars
         else:
             for i in range(len(hand)-1, 0, -1):
                 _d = CARD_SPACING * i
-                SCREEN.blit(img_back, (x_0+_d, y_0-_d))
+                SCREEN.blit(SPRITE, (x_0+_d, y_0-_d), DECK_BACK_IMAGE)
 
     def create_deck(self):
         '''
         Create shuffled list of cards for game
         '''
-
         cards = []
-        for filename in os.listdir(CARDS):
-            if '_' in filename:
-                cards.append(filename)
+
+        suites = 'CSDH'
+        for j, suite in enumerate(suites):
+            # generate y coordinate of card in sprite
+            y = ((j + 1)) * SPRITE_SPACING + (j * CARD_HEIGHT)
+            for i in range(1, 14):
+                # card value
+                value = i
+                # generate x coordinate of card in sprite
+                x = (i * SPRITE_SPACING) + ( (i - 1) * CARD_WIDTH)
+                # create card rect in sprite
+                rect = pygame.rect.Rect(x, y, CARD_WIDTH, CARD_HEIGHT)
+                # generate card object
+                card = Card(value, rect, suite)
+                cards.append(card)
         random.shuffle(cards)
         return cards
 
@@ -375,9 +406,8 @@ class JockerJB:
         # compute tota value of Blacks and Reds
         for pos in self.selected:
             selection.append(pos)
-            res = re.search('(\w)_(\d+)', self.hands[pos][-1])
-            card_type = res.group(1)
-            card_value = int(res.group(2))
+            card_type = self.hands[pos][-1].suite
+            card_value = self.hands[pos][-1].value
             if card_type.startswith('S') or card_type.startswith('C'):
                 blacks += card_value
             elif card_type.startswith('D') or card_type.startswith('H'):
@@ -413,9 +443,8 @@ class JockerJB:
         reds = 0
         for card in cards:
             # extract card value and symbol
-            res = re.search('(\w)_(\d+)', card)
-            card_type = res.group(1)
-            card_value = int(res.group(2))
+            card_type = card.suite
+            card_value = card.value
             if card_type.startswith('S') or card_type.startswith('C'):
                 blacks += card_value
             elif card_type.startswith('D') or card_type.startswith('H'):
@@ -467,7 +496,7 @@ class JockerJB:
                     for _ in range(7):
                         hand.append(self.cards.pop())
                 self.hands[pos] = hand
-                self.rects[pos] = pygame.rect.Rect(layouts[pos]['x_0'], layouts[pos]['y_0'], CARD_WIDTH * CARD_SCALE_FACTOR , CARD_HEIGHT * CARD_SCALE_FACTOR )
+                self.rects[pos] = pygame.rect.Rect(layouts[pos]['x_0'], layouts[pos]['y_0'], CARD_WIDTH, CARD_HEIGHT)
 
         # add joker hand
         hand = Hand('joker')
@@ -503,7 +532,7 @@ class JockerJB:
         undo_button = self.create_button('UNDO', (GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 90, BUTTON_WIDTH, BUTTON_HEIGHT, self.undo_play)
         restart_button = self.create_button('RESTART', (GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 150, BUTTON_WIDTH, BUTTON_HEIGHT, self.restart_play)
         newgame_button = self.create_button('NEW GAME', (GAME_WIDTH - 10 - BUTTON_WIDTH), BUTTON_HEIGHT + 210, BUTTON_WIDTH, BUTTON_HEIGHT, self.new_game)
-        play_button = self.create_button('PLAY', Layout(self.x_0, self.y_0).get_layouts()['E']['x_0'] + BUTTON_WIDTH + 40, GAME_HEIGHT/2 - 20, BUTTON_WIDTH, BUTTON_HEIGHT, self.play)
+        play_button = self.create_button('PLAY', Layout(self.x_0, self.y_0).get_layouts()['E']['x_0'] + BUTTON_WIDTH - 20, GAME_HEIGHT/2, BUTTON_WIDTH, BUTTON_HEIGHT, self.play)
         self.buttons = [
             quit_button,
             help_button,
@@ -571,12 +600,12 @@ class JockerJB:
         self.selected = dict()
 
         # Win Animation
-        win = Win(100, 200)
+        win = Win(X_0, Y_0)
         win_grp = pygame.sprite.Group()
         win_grp.add(win)
 
         # Lose Animation
-        lose = Lose(100, 200)
+        lose = Lose(X_0, Y_0)
         lose_grp = pygame.sprite.Group()
         lose_grp.add(lose)
 
@@ -637,15 +666,19 @@ class JockerJB:
 
             SCREEN.fill(pygame.Color(SCREEN_BACKGROUND))
             
-            # draw cards
+            # draw cards on screen
             layouts = self.layout.get_layouts()
-            for pos in self.hands:
+            for pos in layouts:
                 if len(self.hands[pos]) > 0:
                     self.display_stack(self.hands[pos], layouts[pos]['x_0'], layouts[pos]['y_0'])
                     if pos != 'D':
-                        card_img = pygame.image.load(CARDS + self.hands[pos][-1])
-                        card_img = pygame.transform.rotozoom(card_img, 0, 0.75)
-                        SCREEN.blit(card_img, (layouts[pos]['x_0'], layouts[pos]['y_0']))
+                        card = self.hands[pos][-1]
+
+                        if type(card) == Card:
+                            SCREEN.blit(SPRITE, (layouts[pos]['x_0'], layouts[pos]['y_0']), card.rect)
+                        
+                        elif type(card) == pygame.rect.Rect:
+                            SCREEN.blit(SPRITE, (layouts[pos]['x_0'], layouts[pos]['y_0']), card)
 
             # highlight selected cards
             for pos in self.selected:

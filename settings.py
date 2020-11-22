@@ -1,8 +1,8 @@
 import pygame
 
 # game parameters
-GAME_WIDTH = 1200
-GAME_HEIGHT = 800
+GAME_WIDTH = 800
+GAME_HEIGHT = 600
 GAME_TITLE = 'Jocker Jail Break'
 GAME_FPS = 60
 
@@ -12,12 +12,12 @@ X_0 = GAME_WIDTH/2
 Y_0 = GAME_HEIGHT/2
 
 # card parameters
-CARD_WIDTH = 157
-CARD_HEIGHT = 222
+CARD_WIDTH = 80
+CARD_HEIGHT = 112
 CARD_SCALE_FACTOR = 0.75
-CARD_SPACING = 3
+CARD_SPACING = 2
 # deck settings
-DECK_SPACING = 20
+DECK_SPACING = 40
 
 # button parameters
 BUTTON_ACTIVE_COLOR = pygame.Color('lightblue')
@@ -36,8 +36,6 @@ SMALL_FONT_SIZE = 20
 # Game Assets
 GAME_FONT_PATH = 'assets/fonts/pdark.ttf'
 REGULAR_FONT_PATH = 'assets/fonts/ShareTechMono-Regular.ttf'
-JOKER_IMAGE = 'joker.png'
-DECK_BACK_IMAGE = 'assets/cards/deck.png'
 HELP_IMAGE = 'assets/help.png'
 CARDS = 'assets/cards/'
 
