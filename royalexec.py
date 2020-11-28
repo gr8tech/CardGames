@@ -232,10 +232,15 @@ while True:
                 cards = royal.cards + royal.play
                 rect = pygame.rect.Rect(royal.location.x, royal.location.y, CARD_WIDTH, ((len(cards)-1)*30) + CARD_HEIGHT)
                 if rect.collidepoint(event.pos):
-                    if royal == selected_royal:
-                        selected_royal = None
-                    else:
-                        selected_royal = royal
+                    if selected_hand and len(royal.play) < 3:
+                        royal.play.append(selected_hand.card)
+                        selected_hand.card = None
+                        selected_hand = None
+                        
+                    # if royal == selected_royal:
+                    #     selected_royal = None
+                    # else:
+                    #     selected_royal = royal
                 
 
     SCREEN.fill(SNOW4)
