@@ -25,6 +25,7 @@ FPS = 60
 # colors
 TITLE_BACKGROUND = pygame.Color((63, 231, 157))
 BLACK = pygame.Color('black')
+HIGHLIGHTED = pygame.Color((255,0,0,128))
 
 # create game display
 SCREEN = pygame.display.set_mode((800, 600))
@@ -199,6 +200,12 @@ for royal in royals:
 # state management for undo operations
 # state = []
 
+# selected hand
+selected_hand = None
+# s = pygame.Surface((self.rects[pos][2], self.rects[pos][3]), pygame.SRCALPHA)
+# s.fill(HIGHLIGHTED)
+# SCREEN.blit(s, (self.rects[pos][0], self.rects[pos][1]))
+
 while True:
 
     # event loop
@@ -209,7 +216,15 @@ while True:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             # detect click on draw deck
-            get_cards()
+            if COORD['draw'].collidepoint(event.pos):
+                get_cards()
+            # detect click on hand
+            for hand in hands:
+                if hand == selected_hand:
+                    selected_hand = None
+                elif hand.location.collidepoint(event.pos) and hand.card != None:
+                    selected_hand = hand
+                
 
     SCREEN.fill(SNOW4)
     display_title()
@@ -217,6 +232,10 @@ while True:
     display_hands()
     display_discard()
     display_royals()
+    if selected_hand and selected_hand.card != None:
+        s = pygame.Surface((selected_hand.location.w, selected_hand.location.h), pygame.SRCALPHA)
+        s.fill(HIGHLIGHTED)
+        SCREEN.blit(s, selected_hand.location.topleft)
     # print(len(royals_cards))    
     pygame.display.update()
     clock.tick(FPS)
