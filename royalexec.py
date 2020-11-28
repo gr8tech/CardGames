@@ -49,14 +49,14 @@ DECK_BACK_IMAGE.blit(SPRITE, (0,0), rect)
 
 # locations
 COORD = {
-    'draw': (80, 244),
-    'discard': (640, 244),
-    'hand1': (250, 403),
-    'hand2': (360, 403),
-    'hand3': (470, 403),
-    'royal1': (250, 60),
-    'royal2': (360, 60),
-    'royal3': (470, 60)
+    'draw': pygame.rect.Rect(80, 244, CARD_WIDTH, CARD_HEIGHT),
+    'discard': pygame.rect.Rect(640, 244, CARD_WIDTH, CARD_HEIGHT),
+    'hand1': pygame.rect.Rect(250, 403, CARD_WIDTH, CARD_HEIGHT),
+    'hand2': pygame.rect.Rect(360, 403, CARD_WIDTH, CARD_HEIGHT),
+    'hand3': pygame.rect.Rect(470, 403, CARD_WIDTH, CARD_HEIGHT),
+    'royal1': pygame.rect.Rect(250, 60, CARD_WIDTH, CARD_HEIGHT),
+    'royal2': pygame.rect.Rect(360, 60, CARD_WIDTH, CARD_HEIGHT),
+    'royal3': pygame.rect.Rect(470, 60, CARD_WIDTH, CARD_HEIGHT)
 }
 
 class Card:
@@ -106,7 +106,7 @@ def create_cards():
             image = pygame.surface.Surface((CARD_WIDTH, CARD_HEIGHT))
             image.blit(SPRITE, (0,0), rect)
             # get jokers only form last row
-            if i == 4 and j < 2:
+            if i == 4 and j < 3:
                 deck.append(image)
             # get non royals only
             if i < 4 and j < 11:
@@ -122,7 +122,7 @@ def display_deck():
     Displays a stack of cards behind the top cards
     '''
     scaled_count = int(len(deck) / 3) 
-    x_0, y_0 = COORD['draw']
+    x_0, y_0 = COORD['draw'].topleft
     # stack behind the draw deck
     for i in range(scaled_count-1, -1, -1):
         _d = 3 * i
@@ -132,6 +132,8 @@ def display_hands():
     for hand in hands:
         if hand.card == None:
             display_place_holder(hand.location[0], hand.location[1], CARD_WIDTH, CARD_HEIGHT)
+        else:
+            SCREEN.blit(hand.card, hand.location)
         
 
 def display_discard():
@@ -145,8 +147,14 @@ def display_place_holder(x, y, w, h):
 
 def display_royals():
     for royal in royals:
-        if len(royal.cards) == 0:
-            display_place_holder(royal.location[0], royal.location[1], CARD_WIDTH, CARD_HEIGHT)
+        cards = royal.cards + royal.play
+        if len(cards) == 0:
+            display_place_holder(royal.location.x, royal.location.y, CARD_WIDTH, CARD_HEIGHT)
+        _d = 30
+        for i, card in enumerate(cards):
+            _y = royal.location.y + (i * _d)
+            rect = pygame.rect.Rect(royal.location.x, _y, CARD_WIDTH, CARD_HEIGHT)
+            SCREEN.blit(card, rect)
 
 def display_title():
     # prepare text
@@ -160,7 +168,15 @@ def display_title():
     # draw text
     SCREEN.blit(text_surface, text_rect)
 
-deck, royals = create_cards()
+def get_cards():
+    if len(deck) >= 3:
+        for hand in hands:
+            if hand.card != None:
+                return
+        for hand in hands:
+            hand.card= deck.pop()
+
+deck, royals_cards = create_cards()
 
 # declare hands
 hand1 = Hand(None, COORD['hand1'])
@@ -174,12 +190,14 @@ royal1 = Royal(COORD['royal1'])
 royal2 = Royal(COORD['royal2'])
 royal3 = Royal(COORD['royal3'])
 royals = [royal1, royal2, royal3]
+# add cards to royals
+for royal in royals:
+    for _ in range(4):
+        card = royals_cards.pop()
+        royal.cards.append(card)
 
-print(len(deck), len(royals))
-print(deck)
-print(royals)
-
-
+# state management for undo operations
+# state = []
 
 while True:
 
@@ -189,13 +207,16 @@ while True:
         if event.type == pygame.QUIT:
             quit_game()
 
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # detect click on draw deck
+            get_cards()
+
     SCREEN.fill(SNOW4)
     display_title()
-    # for point in COORD:
-    #     SCREEN.blit(DECK_BACK_IMAGE, COORD[point])
     display_deck()
     display_hands()
     display_discard()
     display_royals()
+    # print(len(royals_cards))    
     pygame.display.update()
     clock.tick(FPS)
