@@ -109,6 +109,7 @@ def create_cards():
             card = Card(j, image, suite)
             # get jokers only form last row
             if i == 4 and j < 3:
+                card.value = "flex"
                 deck.append(card)
             # get non royals only
             if i < 4 and j < 11:
