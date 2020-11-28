@@ -202,6 +202,7 @@ for royal in royals:
 
 # selected hand
 selected_hand = None
+selected_royal = None
 # s = pygame.Surface((self.rects[pos][2], self.rects[pos][3]), pygame.SRCALPHA)
 # s.fill(HIGHLIGHTED)
 # SCREEN.blit(s, (self.rects[pos][0], self.rects[pos][1]))
@@ -220,10 +221,21 @@ while True:
                 get_cards()
             # detect click on hand
             for hand in hands:
-                if hand == selected_hand:
-                    selected_hand = None
-                elif hand.location.collidepoint(event.pos) and hand.card != None:
-                    selected_hand = hand
+                if hand.location.collidepoint(event.pos):
+                    if hand == selected_hand:
+                        selected_hand = None
+                    elif hand.card != None:
+                        selected_hand = hand
+
+            # detect click on royal
+            for royal in royals:
+                cards = royal.cards + royal.play
+                rect = pygame.rect.Rect(royal.location.x, royal.location.y, CARD_WIDTH, ((len(cards)-1)*30) + CARD_HEIGHT)
+                if rect.collidepoint(event.pos):
+                    if royal == selected_royal:
+                        selected_royal = None
+                    else:
+                        selected_royal = royal
                 
 
     SCREEN.fill(SNOW4)
@@ -232,10 +244,17 @@ while True:
     display_hands()
     display_discard()
     display_royals()
+    # display selected hand
     if selected_hand and selected_hand.card != None:
-        s = pygame.Surface((selected_hand.location.w, selected_hand.location.h), pygame.SRCALPHA)
+        s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
         s.fill(HIGHLIGHTED)
         SCREEN.blit(s, selected_hand.location.topleft)
-    # print(len(royals_cards))    
+    # display selected royal
+    if selected_royal:
+        cards = selected_royal.cards + selected_royal.play
+        rect = pygame.rect.Rect(selected_royal.location.x, selected_royal.location.y + ((len(cards)-1)*30), CARD_WIDTH, CARD_HEIGHT)
+        s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
+        s.fill(HIGHLIGHTED)
+        SCREEN.blit(s, rect.topleft)
     pygame.display.update()
     clock.tick(FPS)
