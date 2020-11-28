@@ -62,7 +62,7 @@ COORD = {
 
 class Card:
     
-    def __init__(self):
+    def __init__(self, value, symbol, suite):
         self.value = value
         self.symbol = symbol
         self.suite = suite
@@ -106,14 +106,15 @@ def create_cards():
             rect = pygame.rect.Rect(x, y, CARD_WIDTH, CARD_HEIGHT)
             image = pygame.surface.Surface((CARD_WIDTH, CARD_HEIGHT))
             image.blit(SPRITE, (0,0), rect)
+            card = Card(j, image, suite)
             # get jokers only form last row
             if i == 4 and j < 3:
-                deck.append(image)
+                deck.append(card)
             # get non royals only
             if i < 4 and j < 11:
-                deck.append(image)
+                deck.append(card)
             if i < 4 and j > 10:
-                royals.append(image)
+                royals.append(card)
     random.shuffle(deck)
     random.shuffle(royals)
     return deck, royals
@@ -134,7 +135,7 @@ def display_hands():
         if hand.card == None:
             display_place_holder(hand.location[0], hand.location[1], CARD_WIDTH, CARD_HEIGHT)
         else:
-            SCREEN.blit(hand.card, hand.location)
+            SCREEN.blit(hand.card.symbol, hand.location)
         
 
 def display_discard():
@@ -155,7 +156,7 @@ def display_royals():
         for i, card in enumerate(cards):
             _y = royal.location.y + (i * _d)
             rect = pygame.rect.Rect(royal.location.x, _y, CARD_WIDTH, CARD_HEIGHT)
-            SCREEN.blit(card, rect)
+            SCREEN.blit(card.symbol, rect)
 
 def display_title():
     # prepare text
