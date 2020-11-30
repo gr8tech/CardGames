@@ -263,6 +263,8 @@ for royal in royals:
 selected_hand = None
 selected_royal = None
 selected_joker = False
+show_joker_options = False
+active_royal = None
 
 while True:
 
@@ -276,34 +278,41 @@ while True:
             check_options_hover(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            # detect click on draw deck
-            if COORD['draw'].collidepoint(event.pos):
-                get_cards()
-            # detect click on hand
-            for hand in hands:
-                if hand.location.collidepoint(event.pos):
-                    if hand == selected_hand:
-                        selected_hand = None
-                    elif hand.card != None:
-                        selected_hand = hand
+            if show_joker_options:
+                # check joker value selected
+                for option in joker_options:
+                    if option.rect.collidepoint(event.pos):
+                        active_royal.play[-1].value = option.value
+                        show_joker_options = False
+                        break
+            else:
+                # detect click on draw deck
+                if COORD['draw'].collidepoint(event.pos):
+                    get_cards()
+                # detect click on hand
+                for hand in hands:
+                    if hand.location.collidepoint(event.pos):
+                        if hand == selected_hand:
+                            selected_hand = None
+                        elif hand.card != None:
+                            selected_hand = hand
 
-            # detect click on royal
-            for royal in royals:
-                cards = royal.cards + royal.play
-                rect = pygame.rect.Rect(royal.location.x, royal.location.y, CARD_WIDTH, ((len(cards)-1)*30) + CARD_HEIGHT)
-                if rect.collidepoint(event.pos):
-                    if selected_hand and len(royal.play) < 3:
-                        royal.play.append(selected_hand.card)
-                        selected_hand.card = None
-                        selected_hand = None
-                        if len(royal.play) == 3:
-                            pass
-                        
-                    # if royal == selected_royal:
-                    #     selected_royal = None
-                    # else:
-                    #     selected_royal = royal
-                
+                # detect click on royal
+                for royal in royals:
+                    cards = royal.cards + royal.play
+                    rect = pygame.rect.Rect(royal.location.x, royal.location.y, CARD_WIDTH, ((len(cards)-1)*30) + CARD_HEIGHT)
+                    if rect.collidepoint(event.pos):
+                        if selected_hand and len(royal.play) < 3:
+                            royal.play.append(selected_hand.card)
+                            if royal.play[-1].value =='flex' and len(royal.play) <= 2:
+                                show_joker_options = True
+                                active_royal = royal
+                            selected_hand.card = None
+                            selected_hand = None
+                            if royal.play[-1].value == None:
+                                show_joker_options == True
+                            if len(royal.play) == 3:
+                                pass
 
     SCREEN.fill(SNOW4)
     display_title()
@@ -311,7 +320,8 @@ while True:
     display_hands()
     display_discard()
     display_royals()
-    display_joker_options()
+    if show_joker_options:
+        display_joker_options()
     # display selected hand
     if selected_hand and selected_hand.card != None:
         s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
@@ -324,6 +334,6 @@ while True:
         s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
         s.fill(HIGHLIGHTED)
         SCREEN.blit(s, rect.topleft)
-    
+
     pygame.display.update()
     clock.tick(FPS)
