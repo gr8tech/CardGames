@@ -25,6 +25,8 @@ FPS = 60
 # colors
 TITLE_BACKGROUND = pygame.Color((63, 231, 157))
 BLACK = pygame.Color('black')
+WHITE = pygame.Color('white')
+RED = pygame.Color('red')
 HIGHLIGHTED = pygame.Color((255,0,0,128))
 
 # create game display
@@ -34,6 +36,7 @@ pygame.display.set_caption(TITLE)
 # load fonts and images
 try:
     TITLE_FONT = pygame.font.Font('assets/fonts/pdark.ttf', 40)
+    SMALL_FONT = pygame.font.Font('assets/fonts/ShareTechMono-Regular.ttf', 15)
     SPRITE = pygame.image.load('assets/cards/cards.png').convert_alpha()
 except FileNotFoundError:
     print('Error loading game assets')
@@ -47,17 +50,20 @@ rect = pygame.rect.Rect(x, y, CARD_WIDTH, CARD_HEIGHT)
 DECK_BACK_IMAGE = pygame.surface.Surface((CARD_WIDTH, CARD_HEIGHT))
 DECK_BACK_IMAGE.blit(SPRITE, (0,0), rect)
  
+# joker options
+INACTIVE = BLACK
+ACTIVE = RED
 
 # locations
 COORD = {
     'draw': pygame.rect.Rect(80, 244, CARD_WIDTH, CARD_HEIGHT),
     'discard': pygame.rect.Rect(640, 244, CARD_WIDTH, CARD_HEIGHT),
-    'hand1': pygame.rect.Rect(250, 403, CARD_WIDTH, CARD_HEIGHT),
-    'hand2': pygame.rect.Rect(360, 403, CARD_WIDTH, CARD_HEIGHT),
-    'hand3': pygame.rect.Rect(470, 403, CARD_WIDTH, CARD_HEIGHT),
-    'royal1': pygame.rect.Rect(250, 60, CARD_WIDTH, CARD_HEIGHT),
-    'royal2': pygame.rect.Rect(360, 60, CARD_WIDTH, CARD_HEIGHT),
-    'royal3': pygame.rect.Rect(470, 60, CARD_WIDTH, CARD_HEIGHT)
+    'hand1': pygame.rect.Rect(250, 410, CARD_WIDTH, CARD_HEIGHT),
+    'hand2': pygame.rect.Rect(360, 410, CARD_WIDTH, CARD_HEIGHT),
+    'hand3': pygame.rect.Rect(470, 410, CARD_WIDTH, CARD_HEIGHT),
+    'royal1': pygame.rect.Rect(250, 55, CARD_WIDTH, CARD_HEIGHT),
+    'royal2': pygame.rect.Rect(360, 55, CARD_WIDTH, CARD_HEIGHT),
+    'royal3': pygame.rect.Rect(470, 55, CARD_WIDTH, CARD_HEIGHT)
 }
 
 class Card:
@@ -92,6 +98,13 @@ class Deck:
         self.location = location
         self.cards = []
 
+class JokerOption:
+
+    def __init__(self, value, rect):
+        self.value = value
+        self.rect = rect
+        self.color = INACTIVE
+
 def quit_game():
     pygame.quit()
     quit()
@@ -116,7 +129,7 @@ def create_cards():
                 deck.append(card)
             if i < 4 and j > 10:
                 royals.append(card)
-    random.shuffle(deck)
+    # random.shuffle(deck)
     random.shuffle(royals)
     return deck, royals
 
@@ -179,7 +192,51 @@ def get_cards():
         for hand in hands:
             hand.card= deck.pop()
 
+def create_joker_options():
+    pos = list(COORD['hand1'].topleft)
+    pos[1] -= 35
+    _d = 20
+    for i in range(2, 11):
+        _x = (_d * ( i-2)) + (i-1)*15 + pos[0] - 22
+        _y = pos[1]
+        _j = i - 2
+        rect = pygame.rect.Rect(_x, _y , 30, 30)
+        option = JokerOption(i, rect)
+        joker_options.append(option)
+
+def display_joker_options():
+    pos = list(COORD['hand1'].topleft)
+    pos[1] -= 35
+    _d = 20
+    for i, option in enumerate(joker_options):
+        surf = pygame.surface.Surface((30, 30))
+        surf.fill(option.color)
+        surf.get_rect().center
+        text_surface = SMALL_FONT.render(str(i + 2), True, WHITE)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (15,15)
+        surf.blit(text_surface, text_rect)
+        SCREEN.blit(surf, option.rect)
+
+    # message
+    message_surface = SMALL_FONT.render('Select Joker value',True, RED, BLACK)
+    message_rect = message_surface.get_rect()
+    message_rect.left = pos[0] - 7
+    message_rect.top = pos[-1] - 20
+    SCREEN.blit(message_surface, message_rect)
+
+def check_options_hover(event):
+    for option in joker_options:
+        if option.rect.collidepoint(event.pos):
+            option.color = ACTIVE
+        else:
+            option.color = INACTIVE
+
 deck, royals_cards = create_cards()
+
+# value options for jokers
+joker_options = []
+create_joker_options()
 
 # declare hands
 hand1 = Hand(None, COORD['hand1'])
@@ -205,9 +262,7 @@ for royal in royals:
 # selected hand
 selected_hand = None
 selected_royal = None
-# s = pygame.Surface((self.rects[pos][2], self.rects[pos][3]), pygame.SRCALPHA)
-# s.fill(HIGHLIGHTED)
-# SCREEN.blit(s, (self.rects[pos][0], self.rects[pos][1]))
+selected_joker = False
 
 while True:
 
@@ -216,6 +271,9 @@ while True:
         # quit event
         if event.type == pygame.QUIT:
             quit_game()
+
+        if event.type == pygame.MOUSEMOTION:
+            check_options_hover(event)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             # detect click on draw deck
@@ -238,6 +296,8 @@ while True:
                         royal.play.append(selected_hand.card)
                         selected_hand.card = None
                         selected_hand = None
+                        if len(royal.play) == 3:
+                            pass
                         
                     # if royal == selected_royal:
                     #     selected_royal = None
@@ -251,6 +311,7 @@ while True:
     display_hands()
     display_discard()
     display_royals()
+    display_joker_options()
     # display selected hand
     if selected_hand and selected_hand.card != None:
         s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
@@ -263,5 +324,6 @@ while True:
         s = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
         s.fill(HIGHLIGHTED)
         SCREEN.blit(s, rect.topleft)
+    
     pygame.display.update()
     clock.tick(FPS)
